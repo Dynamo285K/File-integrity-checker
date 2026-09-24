@@ -30,12 +30,13 @@ if [[ "$1" = "init" ]]; then
 
 elif [[ "$1" = "check" || "$1" = "-check" ]]; then
 	
-	
+
 	if [[ ! -f "$SECURE_FILE" ]]; then
 		echo "Database not found. Try running $0 init first."
 		exit 1
 	fi
 
+	# Get the raw output so it's easier to manipulate with output
 	set +e
 	RAW_OUTPUT="$(grep -F "$2" "$SECURE_FILE" | sha256sum -c --quiet - 2>/dev/null)"
 	set -e	
@@ -48,6 +49,16 @@ elif [[ "$1" = "check" || "$1" = "-check" ]]; then
 		echo "Status: Modified (Hash mismatch)"
 		echo "$CLEAN_LIST"
 	fi
+
+else 
+	# Copy of secure file without the record in $2
+	grep -vF "$2" "$SECURE_FILE" > "${SECURE_FILE}.tmp"
+
+	mv "${SECURE_FILE}.tmp" "$SECURE_FILE"
+
+	# Call init to replace wanted files
+	"$0" "init" "$2" && \
+	echo "Hash updated successfully"	
 
 fi
 
